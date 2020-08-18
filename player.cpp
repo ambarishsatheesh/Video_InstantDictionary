@@ -359,6 +359,8 @@ void Player::positionChanged(qint64 progress)
     if (!m_slider->isSliderDown())
         m_slider->setValue(progress / 1000);
 
+    m_subtitles->clear();
+
     updateDurationInfo(progress / 1000);
 }
 
