@@ -87,6 +87,7 @@ public:
     void setCustomAudioRole(const QString &role);
 
 signals:
+    void drawSubtitles_signal(QString subtitle);
 
 private slots:
     void open();
@@ -106,12 +107,13 @@ private slots:
     //void videoAvailableChanged(bool available);
 
     void displayErrorMessage();
+    void drawSubtitles(QString subtitle);
 
 private:
     bool isWithinSubPeriod(qint64 curPos, QString subtitle_time);
     QString format_time(int time);
     void processSubtitles();
-    void drawSubtitles();
+
     void setTrackInfo(const QString &info);
     void setStatusInfo(const QString &info);
     void handleCursor(QMediaPlayer::MediaStatus status);
@@ -135,6 +137,7 @@ private:
 
     //subtitles
     int currentIndex;
+    QTextEdit * m_subtitles = nullptr;
     QList<QStringList> subtitle_List;
 
     //thread to draw subs

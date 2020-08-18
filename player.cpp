@@ -134,13 +134,16 @@ Player::Player(QWidget *parent)
     connect(m_player, &QMediaPlayer::volumeChanged, controls, &PlayerControls::setVolume);
     connect(m_player, &QMediaPlayer::mutedChanged, controls, &PlayerControls::setMuted);
 
+
     //TEST
 
     m_transcript = new QTextEdit(this);
     m_transcript->setReadOnly(true);
 
-    QTextEdit * m_subtitles = new QTextEdit (parent);
+    m_subtitles = new QTextEdit(parent);
     m_subtitles->setReadOnly(true);
+
+    connect(this, &Player::drawSubtitles_signal, this, &Player::drawSubtitles);
 
     QSplitter* splitter1 = new QSplitter(Qt::Vertical, parent);
 
@@ -217,11 +220,9 @@ void Player::processSubtitles()
                 {
                     if (isWithinSubPeriod(m_player->position(), cur_subtitles.at(i)))
                     {
-                        qDebug() << cur_subtitles.at(i + 1);
-                        qDebug() << cur_subtitles.at(i + 2);
+                        QString fullSub = cur_subtitles.at(i+1) + "\n" + cur_subtitles.at(i+2);
+                        emit drawSubtitles_signal(fullSub);
                     }
-
-                    drawSubtitles();
                 }
             }
         }
@@ -259,9 +260,9 @@ QString Player::format_time(int time)
     }
 }
 
-void Player::drawSubtitles()
+void Player::drawSubtitles(QString subtitle)
 {
-
+    m_subtitles->setText(subtitle);
 }
 
 bool Player::isPlayerAvailable() const
