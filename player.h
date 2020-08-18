@@ -54,6 +54,7 @@
 #include <QWidget>
 #include <QMediaPlayer>
 #include <QMediaPlaylist>
+#include <thread>
 
 QT_BEGIN_NAMESPACE
 class QAbstractItemView;
@@ -107,6 +108,10 @@ private slots:
     void displayErrorMessage();
 
 private:
+    bool isWithinSubPeriod(qint64 curPos, QString subtitle_time);
+    QString format_time(int time);
+    void processSubtitles();
+    void drawSubtitles();
     void setTrackInfo(const QString &info);
     void setStatusInfo(const QString &info);
     void handleCursor(QMediaPlayer::MediaStatus status);
@@ -128,8 +133,12 @@ private:
     QString m_statusInfo;
     qint64 m_duration;
 
-    //store subtitles
+    //subtitles
+    int currentIndex;
     QList<QStringList> subtitle_List;
+
+    //thread to draw subs
+    std::thread subThread;
 };
 
 #endif // PLAYER_H

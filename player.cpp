@@ -60,6 +60,8 @@
 #include <QAudioProbe>
 #include <QMediaMetaData>
 #include <QtWidgets>
+#include <QtConcurrent/QtConcurrent>
+#include <cmath>
 
 Player::Player(QWidget *parent)
     : QWidget(parent)
@@ -95,6 +97,9 @@ Player::Player(QWidget *parent)
 
     m_playlistView = new QListView(this);
     m_playlistView->setModel(m_playlistModel);
+
+    //set current index
+    currentIndex = m_playlist->currentIndex();
     m_playlistView->setCurrentIndex(m_playlistModel->index(m_playlist->currentIndex(), 0));
 
     connect(m_playlistView, &QAbstractItemView::activated, this, &Player::jump);
@@ -186,10 +191,77 @@ Player::Player(QWidget *parent)
     }
 
     metaDataChanged();
+    processSubtitles();
 }
 
 Player::~Player()
 {
+    subThread.join();
+}
+
+void Player::processSubtitles()
+{
+    subThread = std::thread([&]()
+    {
+        while (1)
+        {
+            if (currentIndex < 0 || m_player->state() != QMediaPlayer::PlayingState)
+            {
+                continue;
+            }
+
+            auto cur_subtitles = subtitle_List.at(m_playlistModel->index(currentIndex, 0).row());
+            for (size_t i = 0; i < cur_subtitles.size(); ++i)
+            {
+                if (cur_subtitles.at(i).contains("-->"))
+                {
+                    if (isWithinSubPeriod(m_player->position(), cur_subtitles.at(i)))
+                    {
+                        qDebug() << cur_subtitles.at(i + 1);
+                        qDebug() << cur_subtitles.at(i + 2);
+                    }
+
+                    drawSubtitles();
+                }
+            }
+        }
+    });
+}
+
+bool Player::isWithinSubPeriod(qint64 curPos, QString subtitle_time)
+{
+    auto startHour = subtitle_time.mid(0, 2).toInt();
+    auto startMinutes = subtitle_time.mid(3, 2).toInt();
+    auto startSeconds = subtitle_time.mid(6, 2).toInt();
+    auto startRemainder = subtitle_time.mid(9, 3).toInt();
+
+    int start_Milliseconds = (startHour * 3600000) + (startMinutes * 60000) + (startSeconds * 1000) + (startRemainder);
+
+    auto endHour = subtitle_time.mid(17, 2).toInt();
+    auto endMinutes = subtitle_time.mid(20, 2).toInt();
+    auto endSeconds = subtitle_time.mid(23, 2).toInt();
+    auto endRemainder = subtitle_time.mid(26, 3).toInt();
+
+    int end_Milliseconds = (endHour * 3600000) + (endMinutes * 60000) + (endSeconds * 1000) + (endRemainder);
+
+    return start_Milliseconds <= curPos && end_Milliseconds >= curPos;
+}
+
+QString Player::format_time(int time)
+{
+    if (time < 10)
+    {
+        return "0" + QString::number(time);
+    }
+    else
+    {
+        return QString::number(time);
+    }
+}
+
+void Player::drawSubtitles()
+{
+
 }
 
 bool Player::isPlayerAvailable() const
@@ -246,7 +318,7 @@ void Player::open()
     m_transcript->clear();
     for (auto line : subtitle_List.back())
     {
-             m_transcript->append(line);
+        m_transcript->append(line);
     }
 
     m_transcript -> moveCursor(QTextCursor::Start) ;
@@ -326,6 +398,7 @@ void Player::jump(const QModelIndex &index)
 
 void Player::playlistPositionChanged(int currentItem)
 {
+    currentIndex = currentItem;
     m_playlistView->setCurrentIndex(m_playlistModel->index(currentItem, 0));
 
     //load transcript
