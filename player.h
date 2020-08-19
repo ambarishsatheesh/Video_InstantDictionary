@@ -55,6 +55,7 @@
 #include <QMediaPlayer>
 #include <QMediaPlaylist>
 #include <thread>
+#include <QTextCursor>
 
 QT_BEGIN_NAMESPACE
 class QAbstractItemView;
@@ -147,6 +148,9 @@ private:
     //thread to draw subs
     std::thread subtitle_thread;
     std::thread highlightline_thread;
+
+    //cursor
+    void moveScrollBar();
 };
 
 #endif // PLAYER_H

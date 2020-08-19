@@ -140,7 +140,6 @@ Player::Player(QWidget *parent)
     m_transcript = new QTextEdit(this);
     m_transcript->setReadOnly(true);
 
-    //connect(m_transcript, &QTextEdit::selectionChanged, this, &Player::wordHighlighted);
     connect(m_transcript, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
     m_subtitles = new QTextEdit(parent);
@@ -197,7 +196,10 @@ Player::Player(QWidget *parent)
     }
 
     metaDataChanged();
+
+    //functions using threads
     processSubtitles();
+    highlight_currentLine();
 }
 
 Player::~Player()
@@ -206,35 +208,43 @@ Player::~Player()
     highlightline_thread.join();
 }
 
-//void Player::highlight_currentLine()
-//{
-//    subtitle_thread = std::thread([&]()
-//    {
-//        while (1)
-//        {
-//            if (currentIndex < 0)
-//            {
-//                continue;
-//            }
+void Player::highlight_currentLine()
+{
+    highlightline_thread = std::thread([&]()
+    {
+        while (1)
+        {
+            if (currentIndex < 0)
+            {
+                continue;
+            }
 
-//            auto curVideoTime = m_player->position();
+            auto curVideoTime = m_player->position();
 
-//            auto cur_subtitles = subtitle_List.at(m_playlistModel->index(currentIndex, 0).row());
-//            for (size_t i = 0; i < cur_subtitles.size(); ++i)
-//            {
-//                if (cur_subtitles.at(i).contains("-->"))
-//                {
-//                    if (isWithinSubPeriod(m_player->position(), cur_subtitles.at(i)))
-//                    {
+            auto cur_subtitles = subtitle_List.at(m_playlistModel->index(currentIndex, 0).row());
+            for (size_t i = 0; i < cur_subtitles.size(); ++i)
+            {
+                if (cur_subtitles.at(i).contains("-->"))
+                {
+                    if (isWithinSubPeriod(m_player->position(), cur_subtitles.at(i)))
+                    {
+                        QString searchString = cur_subtitles.at(i);
+                        QTextDocument *document = m_transcript->document();
+                        m_transcript->find(searchString);
+                        moveScrollBar();
+                    }
+                }
+            }
+        }
+    });
+}
 
-//                    }
-//                }
-//            }
-
-//            m_transcript->find()
-//        }
-//    });
-//}
+void Player::moveScrollBar()
+{
+    int cursorY = m_transcript->cursorRect().top();
+    QScrollBar *vbar = m_transcript->verticalScrollBar();
+    vbar->setValue(vbar->value() + cursorY - m_transcript->height()/2);
+}
 
 void Player::wordHighlighted(bool yes)
 {
@@ -433,7 +443,10 @@ void Player::positionChanged(qint64 progress)
     if (!m_slider->isSliderDown())
         m_slider->setValue(progress / 1000);
 
+    //clear current subtitles
     m_subtitles->clear();
+    //clear transcript selection
+//    m_transcript->textCursor().clearSelection();
 
     updateDurationInfo(progress / 1000);
 }
