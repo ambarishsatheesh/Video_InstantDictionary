@@ -227,12 +227,87 @@ Player::Player(QWidget *parent)
                     return;
                 }
 
-                QString answer = reply->readAll();
+                QByteArray  answer = reply->readAll();
 
-                QMessageBox msgBox;
-                msgBox.setWindowFlags(Qt::Popup);
-                msgBox.setText(answer);
-                msgBox.exec();
+                m_subtitles->setText(answer);
+
+                QJsonDocument jsonResponse = QJsonDocument::fromJson(answer);
+
+                QJsonObject jsonObject = jsonResponse.object();
+
+                QJsonArray results_array = jsonObject["results"].toArray();
+                QJsonObject results_obj = results_array.at(0).toObject();
+
+                qDebug() << results_obj["id"].toString();
+
+                QJsonArray lexicalEntries_array = results_obj["lexicalEntries"].toArray();
+
+                for (auto lexicalEntry : lexicalEntries_array)
+                {
+                    QJsonObject lexEntry_obj = lexicalEntry.toObject();
+
+                    auto lexCat_obj = lexEntry_obj["lexicalCategory"].toObject();
+                    //lexical category
+                    qDebug() << lexCat_obj["text"].toString();
+
+                    QJsonArray entries_array = lexEntry_obj["entries"].toArray();
+                    QJsonObject entry_obj = entries_array.at(0).toObject();
+
+                    QJsonArray senses_array = entry_obj["senses"].toArray();
+
+                    for (auto sense : senses_array)
+                    {
+                        QJsonObject sense_obj = sense.toObject();
+                        QJsonArray definition_array = sense_obj["definitions"].toArray();
+                        //definition
+                        qDebug() << "Definition: " << definition_array.at(0).toString();
+
+                        QJsonArray examples_array = sense_obj["examples"].toArray();
+
+                        if (!examples_array.empty())
+                        {
+                            for (auto example : examples_array)
+                            {
+                                QJsonObject example_obj = example.toObject();
+                                //example
+                                qDebug() << "Example: " << example_obj["text"].toString();
+                            }
+                        }
+
+                        QJsonArray synonym_array = sense_obj["synonyms"].toArray();
+
+                        QString synonymStr;
+
+                        if (!synonym_array.empty())
+                        {
+                            for (auto synonym : synonym_array)
+                            {
+                                QJsonObject synonym_obj = synonym.toObject();
+                                synonymStr += QString(", " + synonym_obj["text"].toString());
+                            }
+                            //synonym
+                            qDebug() << "Synonyms: " << synonymStr;
+                        }
+                    }
+
+                    qDebug() << "";
+                }
+
+
+
+
+//                QStringList testList;
+
+//                foreach (const QJsonValue & value, jsonArray)
+//                {
+//                    QJsonObject obj = value.toObject();
+//                    QJsonArray entries = jsonObject["lexicalEntries"].toArray();
+
+//                    foreach (const QJsonValue & value2, entries)
+//                    {
+//                        qDebug() << value2.toString();
+//                    }
+//                }
             }
         );
 
@@ -252,7 +327,7 @@ void Player::APIRequest()
 {
     QString endpoint = "entries";
     QString language_code = "en-gb";
-    QString word_id = "example";
+    QString word_id = "network";
 
     auto url = QUrl("https://od-api.oxforddictionaries.com/api/v2/" + endpoint + "/" + language_code + "/" + word_id);
 
