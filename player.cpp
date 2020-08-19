@@ -62,6 +62,7 @@
 #include <QtWidgets>
 #include <QtConcurrent/QtConcurrent>
 #include <cmath>
+#include <QNetworkReply>
 
 Player::Player(QWidget *parent)
     : QWidget(parent)
@@ -182,9 +183,14 @@ Player::Player(QWidget *parent)
     layout->addLayout(hLayout);
     layout->addLayout(controlLayout);
 
-    QPushButton *resetTranscript_button = new QPushButton(tr("Recenter transcript"), this);
-    connect(resetTranscript_button, &QPushButton::clicked, this, &Player::moveScrollBar);
-    controlLayout->addWidget(resetTranscript_button);
+    QPushButton *resetTranscriptPos_button = new QPushButton(tr("Recenter transcript"), this);
+    connect(resetTranscriptPos_button, &QPushButton::clicked, this, &Player::moveScrollBar);
+    controlLayout->addWidget(resetTranscriptPos_button);
+
+    //API Request button
+    QPushButton *dictionaryTest = new QPushButton(tr("API Request Test"), this);
+    connect(dictionaryTest, &QPushButton::clicked, this, &Player::APIRequest);
+    controlLayout->addWidget(dictionaryTest);
 
 
     setLayout(layout);
@@ -205,12 +211,55 @@ Player::Player(QWidget *parent)
     //functions using threads
     processSubtitles();
     highlight_currentLine();
+
+    //setup dictionary API stuff
+    manager = new QNetworkAccessManager();
+        QObject::connect(manager, &QNetworkAccessManager::finished,
+            this, [=](QNetworkReply *reply) {
+
+
+                if (reply->error()) {
+                    QMessageBox msgBox;
+                    msgBox.setWindowFlags(Qt::Popup);
+                    msgBox.setText(reply->errorString());
+                    msgBox.exec();
+
+                    return;
+                }
+
+                QString answer = reply->readAll();
+
+                QMessageBox msgBox;
+                msgBox.setWindowFlags(Qt::Popup);
+                msgBox.setText(answer);
+                msgBox.exec();
+            }
+        );
+
+    app_id  = "a74a5872";
+    app_key  = "46564d304f6f015945afbc97336f4f3c";
 }
 
 Player::~Player()
 {
     subtitle_thread.join();
     highlightline_thread.join();
+
+    delete manager;
+}
+
+void Player::APIRequest()
+{
+    QString endpoint = "entries";
+    QString language_code = "en-gb";
+    QString word_id = "example";
+
+    auto url = QUrl("https://od-api.oxforddictionaries.com/api/v2/" + endpoint + "/" + language_code + "/" + word_id);
+
+    request.setUrl(url);
+    request.setRawHeader("app_id", app_id);
+    request.setRawHeader("app_key", app_key);
+    manager->get(request);
 }
 
 void Player::highlight_currentLine()

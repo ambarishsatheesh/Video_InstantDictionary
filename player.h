@@ -56,6 +56,7 @@
 #include <QMediaPlaylist>
 #include <thread>
 #include <QTextCursor>
+#include <QNetworkAccessManager>
 
 QT_BEGIN_NAMESPACE
 class QAbstractItemView;
@@ -152,6 +153,13 @@ private:
     //cursor
     void moveScrollBar();
     void setTranscriptPosition();
+
+    //dictionary API
+    QByteArray app_id;
+    QByteArray app_key;
+    QNetworkAccessManager *manager;
+    QNetworkRequest request;
+    void APIRequest();
 };
 
 #endif // PLAYER_H
