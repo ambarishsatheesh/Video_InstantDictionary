@@ -202,8 +202,39 @@ Player::Player(QWidget *parent)
 
 Player::~Player()
 {
-    subThread.join();
+    subtitle_thread.join();
+    highlightline_thread.join();
 }
+
+//void Player::highlight_currentLine()
+//{
+//    subtitle_thread = std::thread([&]()
+//    {
+//        while (1)
+//        {
+//            if (currentIndex < 0)
+//            {
+//                continue;
+//            }
+
+//            auto curVideoTime = m_player->position();
+
+//            auto cur_subtitles = subtitle_List.at(m_playlistModel->index(currentIndex, 0).row());
+//            for (size_t i = 0; i < cur_subtitles.size(); ++i)
+//            {
+//                if (cur_subtitles.at(i).contains("-->"))
+//                {
+//                    if (isWithinSubPeriod(m_player->position(), cur_subtitles.at(i)))
+//                    {
+
+//                    }
+//                }
+//            }
+
+//            m_transcript->find()
+//        }
+//    });
+//}
 
 void Player::wordHighlighted(bool yes)
 {
@@ -241,7 +272,7 @@ void Player::wordHighlighted(bool yes)
 
 void Player::processSubtitles()
 {
-    subThread = std::thread([&]()
+    subtitle_thread = std::thread([&]()
     {
         while (1)
         {
@@ -266,23 +297,29 @@ void Player::processSubtitles()
     });
 }
 
-bool Player::isWithinSubPeriod(qint64 curPos, QString subtitle_time)
+qint64 Player::SRTStartTime_to_milliseconds(QString subtitle_time)
 {
     auto startHour = subtitle_time.mid(0, 2).toInt();
     auto startMinutes = subtitle_time.mid(3, 2).toInt();
     auto startSeconds = subtitle_time.mid(6, 2).toInt();
     auto startRemainder = subtitle_time.mid(9, 3).toInt();
 
-    int start_Milliseconds = (startHour * 3600000) + (startMinutes * 60000) + (startSeconds * 1000) + (startRemainder);
+    return (startHour * 3600000) + (startMinutes * 60000) + (startSeconds * 1000) + (startRemainder);
+}
 
+qint64 Player::SRTEndTime_to_milliseconds(QString subtitle_time)
+{
     auto endHour = subtitle_time.mid(17, 2).toInt();
     auto endMinutes = subtitle_time.mid(20, 2).toInt();
     auto endSeconds = subtitle_time.mid(23, 2).toInt();
     auto endRemainder = subtitle_time.mid(26, 3).toInt();
 
-    int end_Milliseconds = (endHour * 3600000) + (endMinutes * 60000) + (endSeconds * 1000) + (endRemainder);
+    return (endHour * 3600000) + (endMinutes * 60000) + (endSeconds * 1000) + (endRemainder);
+}
 
-    return start_Milliseconds <= curPos && end_Milliseconds >= curPos;
+bool Player::isWithinSubPeriod(qint64 curPos, QString subtitle_time)
+{
+    return SRTStartTime_to_milliseconds(subtitle_time) <= curPos && SRTEndTime_to_milliseconds(subtitle_time) >= curPos;
 }
 
 QString Player::format_time(int time)

@@ -111,9 +111,12 @@ private slots:
     void wordHighlighted(bool yes);
 
 private:
+    qint64 SRTStartTime_to_milliseconds(QString subtitle_time);
+    qint64 SRTEndTime_to_milliseconds(QString subtitle_time);
     bool isWithinSubPeriod(qint64 curPos, QString subtitle_time);
     QString format_time(int time);
     void processSubtitles();
+    void highlight_currentLine();
 
     void setTrackInfo(const QString &info);
     void setStatusInfo(const QString &info);
@@ -142,7 +145,8 @@ private:
     QList<QStringList> subtitle_List;
 
     //thread to draw subs
-    std::thread subThread;
+    std::thread subtitle_thread;
+    std::thread highlightline_thread;
 };
 
 #endif // PLAYER_H
