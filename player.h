@@ -108,6 +108,7 @@ private slots:
 
     void displayErrorMessage();
     void drawSubtitles(QString subtitle);
+    void wordHighlighted(bool yes);
 
 private:
     bool isWithinSubPeriod(qint64 curPos, QString subtitle_time);

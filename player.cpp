@@ -140,6 +140,9 @@ Player::Player(QWidget *parent)
     m_transcript = new QTextEdit(this);
     m_transcript->setReadOnly(true);
 
+    //connect(m_transcript, &QTextEdit::selectionChanged, this, &Player::wordHighlighted);
+    connect(m_transcript, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
+
     m_subtitles = new QTextEdit(parent);
     m_subtitles->setReadOnly(true);
 
@@ -200,6 +203,40 @@ Player::Player(QWidget *parent)
 Player::~Player()
 {
     subThread.join();
+}
+
+void Player::wordHighlighted(bool yes)
+{
+    if (yes == false)
+    {
+        return;
+    }
+
+    //detect highlighted word only - no digits
+    m_transcript->copy();
+    QString highlighted_word = QApplication::clipboard()->text();
+    QRegularExpression re("[^\\d\\W]");
+    QRegularExpressionMatch match = re.match(highlighted_word);
+    if (!match.hasMatch())
+    {
+        return;
+    }
+
+    QMessageBox msgBox;
+    msgBox.setWindowFlags(Qt::Popup);
+    msgBox.setText(QApplication::clipboard()->text());
+
+    if (m_player->state() == QMediaPlayer::PlayingState)
+    {
+        m_player->pause();
+    }
+
+    msgBox.exec();
+
+    if (m_player->state() == QMediaPlayer::PausedState)
+    {
+        m_player->play();
+    }
 }
 
 void Player::processSubtitles()
