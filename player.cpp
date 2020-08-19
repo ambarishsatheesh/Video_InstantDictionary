@@ -139,13 +139,14 @@ Player::Player(QWidget *parent)
 
     m_transcript = new QTextEdit(this);
     m_transcript->setReadOnly(true);
-
-    connect(m_transcript, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
+    m_transcript->setTextInteractionFlags(Qt::NoTextInteraction);
+    m_transcript->ensureCursorVisible();
 
     m_subtitles = new QTextEdit(parent);
     m_subtitles->setReadOnly(true);
 
     connect(this, &Player::drawSubtitles_signal, this, &Player::drawSubtitles);
+    connect(m_subtitles, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
     QSplitter* splitter1 = new QSplitter(Qt::Vertical, parent);
 
@@ -181,6 +182,10 @@ Player::Player(QWidget *parent)
     layout->addLayout(hLayout);
     layout->addLayout(controlLayout);
 
+    QPushButton *resetTranscript_button = new QPushButton(tr("Recenter transcript"), this);
+    connect(resetTranscript_button, &QPushButton::clicked, this, &Player::moveScrollBar);
+    controlLayout->addWidget(resetTranscript_button);
+
 
     setLayout(layout);
 
@@ -214,29 +219,31 @@ void Player::highlight_currentLine()
     {
         while (1)
         {
-            if (currentIndex < 0)
-            {
-                continue;
-            }
-
-            auto curVideoTime = m_player->position();
-
-            auto cur_subtitles = subtitle_List.at(m_playlistModel->index(currentIndex, 0).row());
-            for (size_t i = 0; i < cur_subtitles.size(); ++i)
-            {
-                if (cur_subtitles.at(i).contains("-->"))
-                {
-                    if (isWithinSubPeriod(m_player->position(), cur_subtitles.at(i)))
-                    {
-                        QString searchString = cur_subtitles.at(i);
-                        QTextDocument *document = m_transcript->document();
-                        m_transcript->find(searchString);
-                        moveScrollBar();
-                    }
-                }
-            }
+            setTranscriptPosition();
         }
     });
+}
+
+void Player::setTranscriptPosition()
+{
+    if (currentIndex < 0)
+    {
+        return;
+    }
+
+    auto cur_subtitles = subtitle_List.at(m_playlistModel->index(currentIndex, 0).row());
+    for (size_t i = 0; i < cur_subtitles.size(); ++i)
+    {
+        if (cur_subtitles.at(i).contains("-->"))
+        {
+            if (isWithinSubPeriod(m_player->position(), cur_subtitles.at(i)))
+            {
+                QString searchString = cur_subtitles.at(i);
+                m_transcript->find(searchString);
+                moveScrollBar();
+            }
+        }
+    }
 }
 
 void Player::moveScrollBar()
@@ -254,7 +261,7 @@ void Player::wordHighlighted(bool yes)
     }
 
     //detect highlighted word only - no digits
-    m_transcript->copy();
+    m_subtitles->copy();
     QString highlighted_word = QApplication::clipboard()->text();
     QRegularExpression re("[^\\d\\W]");
     QRegularExpressionMatch match = re.match(highlighted_word);
@@ -445,8 +452,12 @@ void Player::positionChanged(qint64 progress)
 
     //clear current subtitles
     m_subtitles->clear();
-    //clear transcript selection
-//    m_transcript->textCursor().clearSelection();
+
+    //reset cursor position so word finding can
+    //start from beginning of doc
+    auto cursor = m_transcript->textCursor();
+    cursor.setPosition(0);
+    m_transcript->setTextCursor(cursor);
 
     updateDurationInfo(progress / 1000);
 }

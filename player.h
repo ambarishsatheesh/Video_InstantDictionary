@@ -151,6 +151,7 @@ private:
 
     //cursor
     void moveScrollBar();
+    void setTranscriptPosition();
 };
 
 #endif // PLAYER_H
