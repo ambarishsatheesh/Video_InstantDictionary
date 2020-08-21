@@ -162,7 +162,7 @@ private:
     QNetworkAccessManager *manager = nullptr;
     QNetworkRequest request;
     QNetworkReply *reply;
-    void APIRequest();
+    void APIRequest(QString word_id);
     QString parse_JSON_Response(QByteArray answer);
 };
 

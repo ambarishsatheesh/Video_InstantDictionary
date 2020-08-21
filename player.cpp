@@ -187,12 +187,6 @@ Player::Player(QWidget *parent)
     connect(resetTranscriptPos_button, &QPushButton::clicked, this, &Player::moveScrollBar);
     controlLayout->addWidget(resetTranscriptPos_button);
 
-    //API Request button
-    QPushButton *dictionaryTest = new QPushButton(tr("API Request Test"), this);
-    connect(dictionaryTest, &QPushButton::clicked, this, &Player::APIRequest);
-    controlLayout->addWidget(dictionaryTest);
-
-
     setLayout(layout);
 
     if (!isPlayerAvailable()) {
@@ -225,11 +219,42 @@ Player::~Player()
     delete manager;
 }
 
-void Player::APIRequest()
+
+void Player::wordHighlighted(bool yes)
+{
+    if (yes == false)
+    {
+        return;
+    }
+
+    //detect highlighted word only - no digits
+    m_subtitles->copy();
+    QString highlighted_word = QApplication::clipboard()->text();
+    QRegularExpression re("[^\\d\\W]");
+    QRegularExpressionMatch match = re.match(highlighted_word);
+    if (!match.hasMatch())
+    {
+        return;
+    }
+
+    if (m_player->state() == QMediaPlayer::PlayingState)
+    {
+        m_player->pause();
+    }
+
+    APIRequest(highlighted_word);
+
+    if (m_player->state() == QMediaPlayer::PausedState)
+    {
+        m_player->play();
+    }
+}
+
+
+void Player::APIRequest(QString word_id)
 {
     QString endpoint = "entries";
     QString language_code = "en-gb";
-    QString word_id = "test";
 
     auto url = QUrl("https://od-api.oxforddictionaries.com/api/v2/" + endpoint + "/" + language_code + "/" + word_id);
 
@@ -421,40 +446,6 @@ void Player::moveScrollBar()
     int cursorY = m_transcript->cursorRect().top();
     QScrollBar *vbar = m_transcript->verticalScrollBar();
     vbar->setValue(vbar->value() + cursorY - m_transcript->height()/2);
-}
-
-void Player::wordHighlighted(bool yes)
-{
-    if (yes == false)
-    {
-        return;
-    }
-
-    //detect highlighted word only - no digits
-    m_subtitles->copy();
-    QString highlighted_word = QApplication::clipboard()->text();
-    QRegularExpression re("[^\\d\\W]");
-    QRegularExpressionMatch match = re.match(highlighted_word);
-    if (!match.hasMatch())
-    {
-        return;
-    }
-
-    QMessageBox msgBox;
-    msgBox.setWindowFlags(Qt::Popup);
-    msgBox.setText(QApplication::clipboard()->text());
-
-    if (m_player->state() == QMediaPlayer::PlayingState)
-    {
-        m_player->pause();
-    }
-
-    msgBox.exec();
-
-    if (m_player->state() == QMediaPlayer::PausedState)
-    {
-        m_player->play();
-    }
 }
 
 void Player::processSubtitles()
