@@ -131,9 +131,6 @@ Player::Player(QWidget *parent)
     connect(m_player, &QMediaPlayer::volumeChanged, controls, &PlayerControls::setVolume);
     connect(m_player, &QMediaPlayer::mutedChanged, controls, &PlayerControls::setMuted);
 
-
-    //TEST
-
     m_transcript = new QTextEdit(this);
     m_transcript->setReadOnly(true);
     //m_transcript->ensureCursorVisible();
@@ -177,10 +174,6 @@ Player::Player(QWidget *parent)
     hLayout->addWidget(m_labelDuration);
     layout->addLayout(hLayout);
     layout->addLayout(controlLayout);
-
-    QPushButton *resetTranscriptPos_button = new QPushButton(tr("Recenter transcript"), this);
-    connect(resetTranscriptPos_button, &QPushButton::clicked, this, &Player::moveScrollBar);
-    controlLayout->addWidget(resetTranscriptPos_button);
 
     setLayout(layout);
 
