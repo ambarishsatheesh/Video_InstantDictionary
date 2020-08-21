@@ -227,7 +227,8 @@ Player::Player(QWidget *parent)
                     return;
                 }
 
-                QByteArray  answer = reply->readAll();
+                QByteArray answer = reply->readAll();
+                QStringList outputList;
 
                 m_subtitles->setText(answer);
 
@@ -238,7 +239,8 @@ Player::Player(QWidget *parent)
                 QJsonArray results_array = jsonObject["results"].toArray();
                 QJsonObject results_obj = results_array.at(0).toObject();
 
-                qDebug() << results_obj["id"].toString();
+                //word
+                outputList.push_back("<b>" + results_obj["id"].toString() + "</b>" + "<br>" + "<br>");
 
                 QJsonArray lexicalEntries_array = results_obj["lexicalEntries"].toArray();
 
@@ -248,10 +250,22 @@ Player::Player(QWidget *parent)
 
                     auto lexCat_obj = lexEntry_obj["lexicalCategory"].toObject();
                     //lexical category
-                    qDebug() << lexCat_obj["text"].toString();
+                    outputList.push_back("<i>" + lexCat_obj["text"].toString() + "</i>" + "</li>" + "<br>");
+                    outputList.push_back("<br>");
 
                     QJsonArray entries_array = lexEntry_obj["entries"].toArray();
                     QJsonObject entry_obj = entries_array.at(0).toObject();
+
+                    QJsonArray pronunc_array = entry_obj["pronunciations"].toArray();
+
+                    for (auto pronunc : pronunc_array)
+                    {
+                        QJsonObject pronunc_obj = pronunc.toObject();
+                        //pronunciation
+                        outputList.push_back("<a href='" + pronunc_obj["audioFile"].toString() + "'>Pronunciation</a>");
+                        outputList.push_back("<br>");
+                        outputList.push_back("<br>");
+                    }
 
                     QJsonArray senses_array = entry_obj["senses"].toArray();
 
@@ -260,7 +274,10 @@ Player::Player(QWidget *parent)
                         QJsonObject sense_obj = sense.toObject();
                         QJsonArray definition_array = sense_obj["definitions"].toArray();
                         //definition
-                        qDebug() << "Definition: " << definition_array.at(0).toString();
+                        outputList.push_back("<b>");
+                        outputList.push_back(definition_array.at(0).toString());
+                        outputList.push_back("</b>");
+                        outputList.push_back("<br>");
 
                         QJsonArray examples_array = sense_obj["examples"].toArray();
 
@@ -270,7 +287,10 @@ Player::Player(QWidget *parent)
                             {
                                 QJsonObject example_obj = example.toObject();
                                 //example
-                                qDebug() << "Example: " << example_obj["text"].toString();
+                                outputList.push_back("<ul>");
+                                outputList.push_back("<li>");
+                                outputList.push_back("Example: " + example_obj["text"].toString());
+                                outputList.push_back("</ul>");
                             }
                         }
 
@@ -286,13 +306,30 @@ Player::Player(QWidget *parent)
                                 synonymStr += QString(", " + synonym_obj["text"].toString());
                             }
                             //synonym
-                            qDebug() << "Synonyms: " << synonymStr;
+                            outputList.push_back("<ul>");
+                            outputList.push_back("<li>");
+                            outputList.push_back("Synonyms: " + synonymStr);
+                            outputList.push_back("</ul>");
+                            outputList.push_back("<br>");
                         }
                     }
-
-                    qDebug() << "";
+                    outputList.push_back("<hr>");
+                    outputList.push_back("<br>");   //line break
                 }
 
+                outputList.push_back("<p align='right'>");
+                outputList.push_back(QString("<a href=https://www.google.com/search?dictcorpus=en-gb&hl=en&forcedict=modify&q=define%20modify'>") + "More</a>");
+                outputList.push_back("</p>");
+
+                QString outputString;
+                for (auto line : outputList)
+                {
+                    outputString += line;
+                }
+                QMessageBox msgBox;
+                msgBox.setWindowFlags(Qt::Popup);
+                msgBox.setText(outputString);
+                msgBox.exec();
 
 
 
