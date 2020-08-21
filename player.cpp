@@ -140,7 +140,7 @@ Player::Player(QWidget *parent)
 
     m_transcript = new QTextEdit(this);
     m_transcript->setReadOnly(true);
-    m_transcript->ensureCursorVisible();
+    //m_transcript->ensureCursorVisible();
     connect(m_transcript, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
     m_subtitles = new QTextEdit(parent);
@@ -228,10 +228,12 @@ void Player::wordHighlighted(bool yes)
     //detect highlighted word only - no digits
     QObject* sender = this->sender();
     QTextEdit* origin_txtedit = qobject_cast<QTextEdit*>(sender);
+
     origin_txtedit->copy();
     curSelectedWord = QApplication::clipboard()->text();
     QRegularExpression re("[^\\d\\W]");
     QRegularExpressionMatch match = re.match(curSelectedWord);
+
     if (!match.hasMatch())
     {
         curSelectedWord.clear();
@@ -424,6 +426,7 @@ void Player::highlight_currentLine()
         while (1)
         {
             setTranscriptPosition();
+            //std::this_thread::sleep_for(std::chrono::milliseconds(300));
         }
     });
 }
@@ -620,15 +623,6 @@ void Player::positionChanged(qint64 progress)
     if (!m_slider->isSliderDown())
         m_slider->setValue(progress / 1000);
 
-    //clear current subtitles
-    //m_subtitles->clear();
-
-    //reset cursor position so word finding can
-    //start from beginning of doc
-    auto cursor = m_transcript->textCursor();
-    cursor.setPosition(0);
-    m_transcript->setTextCursor(cursor);
-
     updateDurationInfo(progress / 1000);
 }
 
@@ -685,6 +679,13 @@ void Player::playlistPositionChanged(int currentItem)
 void Player::seek(int seconds)
 {
     m_player->setPosition(seconds * 1000);
+
+    //reset cursor position so word finding can
+    //start from beginning of doc
+    auto cursor = m_transcript->textCursor();
+    cursor.setPosition(0);
+    m_transcript->setTextCursor(cursor);
+
 }
 
 void Player::statusChanged(QMediaPlayer::MediaStatus status)
