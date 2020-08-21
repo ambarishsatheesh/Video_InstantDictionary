@@ -269,6 +269,11 @@ void Player::managerFinished(QNetworkReply *reply)
         msgBox.setText("Dictionary entry for '" + curSelectedWord + "' is not available");
         msgBox.exec();
 
+        if (m_player->state() == QMediaPlayer::PausedState)
+        {
+            m_player->play();
+        }
+
         return;
     }
 
