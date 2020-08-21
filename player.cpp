@@ -271,9 +271,10 @@ QString Player::parse_JSON_Response(QByteArray answer)
     QJsonObject results_obj = results_array.at(0).toObject();
 
     //word
+    QString word = results_obj["id"].toString();
     outputList.push_back("<p style='font-size:20px'>");
     outputList.push_back("<b>");
-    outputList.push_back(results_obj["id"].toString());
+    outputList.push_back(word);
     outputList.push_back("</b>");
     outputList.push_back("</p>");
     outputList.push_back("<br>");
@@ -368,7 +369,9 @@ QString Player::parse_JSON_Response(QByteArray answer)
     }
 
     outputList.push_back("<p align='right'>");
-    outputList.push_back(QString("<a href=https://www.google.com/search?dictcorpus=en-gb&hl=en&forcedict=modify&q=define%20modify'>") + "More</a>");
+    QString more_url = "https://www.google.com/search?dictcorpus=en-gb&hl=en&forcedict=" +
+            word + "&q=define%20" + word;
+    outputList.push_back("<a href='" + more_url + "'>" + "More</a>");
     outputList.push_back("</p>");
 
     QString outputString;
