@@ -140,12 +140,12 @@ Player::Player(QWidget *parent)
 
     m_transcript = new QTextEdit(this);
     m_transcript->setReadOnly(true);
-    m_transcript->setTextInteractionFlags(Qt::NoTextInteraction);
+    //m_transcript->setTextInteractionFlags(Qt::NoTextInteraction);
     m_transcript->ensureCursorVisible();
+    connect(m_transcript, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
     m_subtitles = new QTextEdit(parent);
     m_subtitles->setReadOnly(true);
-
     connect(this, &Player::drawSubtitles_signal, this, &Player::drawSubtitles);
     connect(m_subtitles, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
@@ -228,10 +228,12 @@ void Player::wordHighlighted(bool yes)
     }
 
     //detect highlighted word only - no digits
-    m_subtitles->copy();
-    QString highlighted_word = QApplication::clipboard()->text();
+    QObject* sender = this->sender();
+    QTextEdit* origin_txtedit = qobject_cast<QTextEdit*>(sender);
+    origin_txtedit->copy();
+    curSelectedWord = QApplication::clipboard()->text();
     QRegularExpression re("[^\\d\\W]");
-    QRegularExpressionMatch match = re.match(highlighted_word);
+    QRegularExpressionMatch match = re.match(curSelectedWord);
     if (!match.hasMatch())
     {
         return;
@@ -242,21 +244,16 @@ void Player::wordHighlighted(bool yes)
         m_player->pause();
     }
 
-    APIRequest(highlighted_word);
-
-    if (m_player->state() == QMediaPlayer::PausedState)
-    {
-        m_player->play();
-    }
+    APIRequest();
 }
 
 
-void Player::APIRequest(QString word_id)
+void Player::APIRequest()
 {
     QString endpoint = "entries";
     QString language_code = "en-gb";
 
-    auto url = QUrl("https://od-api.oxforddictionaries.com/api/v2/" + endpoint + "/" + language_code + "/" + word_id);
+    auto url = QUrl("https://od-api.oxforddictionaries.com/api/v2/" + endpoint + "/" + language_code + "/" + curSelectedWord);
 
     request.setUrl(url);
     request.setRawHeader("app_id", app_id);
@@ -269,7 +266,7 @@ void Player::managerFinished(QNetworkReply *reply)
     if (reply->error()) {
         QMessageBox msgBox;
         msgBox.setWindowFlags(Qt::Popup);
-        msgBox.setText(reply->errorString());
+        msgBox.setText("Dictionary entry for '" + curSelectedWord + "' is not available");
         msgBox.exec();
 
         return;
@@ -282,6 +279,11 @@ void Player::managerFinished(QNetworkReply *reply)
     msgBox.setWindowFlags(Qt::Popup);
     msgBox.setText(outputString);
     msgBox.exec();
+
+    if (m_player->state() == QMediaPlayer::PausedState)
+    {
+        m_player->play();
+    }
 }
 
 QString Player::parse_JSON_Response(QByteArray answer)
@@ -396,7 +398,7 @@ QString Player::parse_JSON_Response(QByteArray answer)
     outputList.push_back("<p align='right'>");
     QString more_url = "https://www.google.com/search?dictcorpus=en-gb&hl=en&forcedict=" +
             word + "&q=define%20" + word;
-    outputList.push_back("<a href='" + more_url + "'>" + "More</a>");
+    outputList.push_back("<a href='" + more_url + "'>" + "View More (Google Search)</a>");
     outputList.push_back("</p>");
 
     QString outputString;
@@ -612,7 +614,7 @@ void Player::positionChanged(qint64 progress)
         m_slider->setValue(progress / 1000);
 
     //clear current subtitles
-    m_subtitles->clear();
+    //m_subtitles->clear();
 
     //reset cursor position so word finding can
     //start from beginning of doc
