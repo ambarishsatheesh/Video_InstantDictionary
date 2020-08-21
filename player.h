@@ -112,6 +112,8 @@ private slots:
     void drawSubtitles(QString subtitle);
     void wordHighlighted(bool yes);
 
+    void managerFinished(QNetworkReply *reply);
+
 private:
     qint64 SRTStartTime_to_milliseconds(QString subtitle_time);
     qint64 SRTEndTime_to_milliseconds(QString subtitle_time);
@@ -157,9 +159,11 @@ private:
     //dictionary API
     QByteArray app_id;
     QByteArray app_key;
-    QNetworkAccessManager *manager;
+    QNetworkAccessManager *manager = nullptr;
     QNetworkRequest request;
+    QNetworkReply *reply;
     void APIRequest();
+    QString parse_JSON_Response(QByteArray answer);
 };
 
 #endif // PLAYER_H
