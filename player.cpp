@@ -140,7 +140,6 @@ Player::Player(QWidget *parent)
 
     m_transcript = new QTextEdit(this);
     m_transcript->setReadOnly(true);
-    //m_transcript->setTextInteractionFlags(Qt::NoTextInteraction);
     m_transcript->ensureCursorVisible();
     connect(m_transcript, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
@@ -219,7 +218,6 @@ Player::~Player()
     delete manager;
 }
 
-
 void Player::wordHighlighted(bool yes)
 {
     if (yes == false)
@@ -236,6 +234,7 @@ void Player::wordHighlighted(bool yes)
     QRegularExpressionMatch match = re.match(curSelectedWord);
     if (!match.hasMatch())
     {
+        curSelectedWord.clear();
         return;
     }
 
@@ -244,7 +243,10 @@ void Player::wordHighlighted(bool yes)
         m_player->pause();
     }
 
-    APIRequest();
+    if (!curSelectedWord.isEmpty())
+    {
+        APIRequest();
+    }
 }
 
 
@@ -452,7 +454,7 @@ void Player::moveScrollBar()
 {
     int cursorY = m_transcript->cursorRect().top();
     QScrollBar *vbar = m_transcript->verticalScrollBar();
-    vbar->setValue(vbar->value() + cursorY - m_transcript->height()/2);
+    vbar->setValue(vbar->value() + cursorY );
 }
 
 void Player::processSubtitles()
