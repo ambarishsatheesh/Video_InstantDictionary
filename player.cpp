@@ -86,8 +86,6 @@ Player::Player(QWidget *parent)
     connect(m_player, &QMediaPlayer::bufferStatusChanged, this, &Player::bufferingProgress);
     //connect(m_player, &QMediaPlayer::videoAvailableChanged, this, &Player::videoAvailableChanged);
     connect(m_player, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &Player::displayErrorMessage);
-    connect(m_player, &QMediaPlayer::stateChanged, this, &Player::stateChanged);
-
 //! [2]
     m_videoWidget = new VideoWidget(this);
     m_player->setVideoOutput(m_videoWidget);
@@ -130,8 +128,6 @@ Player::Player(QWidget *parent)
     connect(controls, &PlayerControls::changeMuting, m_player, &QMediaPlayer::setMuted);
     connect(controls, &PlayerControls::changeRate, m_player, &QMediaPlayer::setPlaybackRate);
     connect(controls, &PlayerControls::stop, m_videoWidget, QOverload<>::of(&QVideoWidget::update));
-
-    connect(m_player, &QMediaPlayer::stateChanged, controls, &PlayerControls::setState);
     connect(m_player, &QMediaPlayer::volumeChanged, controls, &PlayerControls::setVolume);
     connect(m_player, &QMediaPlayer::mutedChanged, controls, &PlayerControls::setMuted);
 
@@ -449,7 +445,7 @@ void Player::setTranscriptPosition()
     }
 
     auto cur_subtitles = subtitle_List.at(m_playlistModel->index(currentIndex, 0).row());
-    for (size_t i = 0; i < cur_subtitles.size(); ++i)
+    for (int i = 0; i < cur_subtitles.size(); ++i)
     {
         if (cur_subtitles.at(i).contains("-->"))
         {
@@ -482,7 +478,7 @@ void Player::processSubtitles()
             }
 
             auto cur_subtitles = subtitle_List.at(m_playlistModel->index(currentIndex, 0).row());
-            for (size_t i = 0; i < cur_subtitles.size(); ++i)
+            for (int i = 0; i < cur_subtitles.size(); ++i)
             {
                 if (cur_subtitles.at(i).contains("-->"))
                 {
@@ -726,10 +722,6 @@ void Player::statusChanged(QMediaPlayer::MediaStatus status)
         displayErrorMessage();
         break;
     }
-}
-
-void Player::stateChanged(QMediaPlayer::State state)
-{
 }
 
 void Player::handleCursor(QMediaPlayer::MediaStatus status)
