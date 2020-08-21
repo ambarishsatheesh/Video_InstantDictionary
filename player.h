@@ -157,8 +157,8 @@ private:
     void setTranscriptPosition();
 
     //dictionary API
-    QByteArray app_id;
-    QByteArray app_key;
+    const QByteArray app_id = "a74a5872";
+    const QByteArray app_key = "46564d304f6f015945afbc97336f4f3c";
     QNetworkAccessManager *manager = nullptr;
     QNetworkRequest request;
     QNetworkReply *reply;

@@ -215,10 +215,6 @@ Player::Player(QWidget *parent)
     //connect network manager signal/slots
     manager = new QNetworkAccessManager();
     connect(manager, &QNetworkAccessManager::finished, this, &Player::managerFinished);
-
-    //make this constexpr
-    app_id  = "a74a5872";
-    app_key  = "46564d304f6f015945afbc97336f4f3c";
 }
 
 Player::~Player()
