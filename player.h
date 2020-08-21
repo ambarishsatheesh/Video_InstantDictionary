@@ -57,6 +57,8 @@
 #include <thread>
 #include <QTextCursor>
 #include <QNetworkAccessManager>
+#include <QHBoxLayout>
+#include <QScrollArea>
 
 QT_BEGIN_NAMESPACE
 class QAbstractItemView;
@@ -165,6 +167,14 @@ private:
     QString curSelectedWord;
     void APIRequest();
     QString parse_JSON_Response(QByteArray answer);
+
+    //dictionary popup
+    QByteArray dict_answer;
+    QString outputString;
+    QDialog* definition_dialog;
+    QTextEdit* dictionaryOutput;
+    QHBoxLayout* dialog_layout;
+    QScrollArea* scroll;
 };
 
 #endif // PLAYER_H

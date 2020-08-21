@@ -208,6 +208,21 @@ Player::Player(QWidget *parent)
     //connect network manager signal/slots
     manager = new QNetworkAccessManager();
     connect(manager, &QNetworkAccessManager::finished, this, &Player::managerFinished);
+
+    //dictionary dialog
+    definition_dialog = new QDialog(this);
+    definition_dialog->setWindowFlags(Qt::Popup);
+
+    dictionaryOutput = new QTextEdit();
+
+    scroll = new QScrollArea(definition_dialog);
+    scroll->setWidgetResizable(true);
+    scroll->setWidget(dictionaryOutput);
+
+    // Add a layout for QDialog
+    dialog_layout = new QHBoxLayout(definition_dialog);
+    definition_dialog->setLayout(dialog_layout);
+    definition_dialog->layout()->addWidget(scroll);
 }
 
 Player::~Player()
@@ -281,32 +296,12 @@ void Player::managerFinished(QNetworkReply *reply)
         return;
     }
 
-    QByteArray answer = reply->readAll();
-    QString outputString = parse_JSON_Response(answer);
-
-//    QMessageBox msgBox;
-//    msgBox.setWindowFlags(Qt::Popup);
-
-    QDialog * dialog = new QDialog(this);
-    dialog->setWindowFlags(Qt::Popup);
-
-    QTextEdit* dictionaryOutput = new QTextEdit();
-
-    QScrollArea *scroll = new QScrollArea(dialog);
-    scroll->setWidgetResizable(true);
-    scroll->setWidget(dictionaryOutput);
-
-
-    // Add a layout for QDialog
-    QHBoxLayout *dialog_layout = new QHBoxLayout(dialog);
-    dialog->setLayout(dialog_layout);
-    dialog->layout()->addWidget(scroll); // add scroll to the QDialog's layout
+    //populate dialog
+    dict_answer = reply->readAll();
+    outputString = parse_JSON_Response(dict_answer);
     dictionaryOutput->setText(outputString);
-    dialog->setMinimumSize(QSize(m_transcript->height()/2, m_transcript->height()));
-    dialog->exec();
-
-//    msgBox.setText(outputString);
-//    msgBox.exec();
+    definition_dialog->setMinimumSize(QSize(m_transcript->height()/2, m_transcript->height()));
+    definition_dialog->exec();
 
     if (m_player->state() == QMediaPlayer::PausedState)
     {
@@ -327,7 +322,7 @@ QString Player::parse_JSON_Response(QByteArray answer)
 
     //word
     QString word = results_obj["id"].toString();
-    outputList.push_back("<p style='font-size:20px'>");
+    outputList.push_back("<p style='color:red'>");
     outputList.push_back("<b>");
     outputList.push_back(word);
     outputList.push_back("</b>");
@@ -412,11 +407,7 @@ QString Player::parse_JSON_Response(QByteArray answer)
                 outputList.push_back("<li>");
                 outputList.push_back("Synonyms: " + synonymStr);
                 outputList.push_back("</ul>");
-                outputList.push_back("<br>");
-            }
-            else
-            {
-                outputList.push_back("<br>");
+
             }
         }
         outputList.push_back("<hr>");
