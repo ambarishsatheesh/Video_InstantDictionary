@@ -110,9 +110,10 @@ Player::Player(QWidget *parent)
     connect(m_slider, &QSlider::sliderMoved, this, &Player::seek);
 
     QPushButton *openVideoButton = new QPushButton(tr("Open Video"), this);
-    QPushButton *addSRTButton = new QPushButton(tr("Add SRT file"), this);
-
     connect(openVideoButton, &QPushButton::clicked, this, &Player::open);
+
+    QPushButton *addSRTButton = new QPushButton(tr("Add SRT file"), this);
+    connect(addSRTButton, &QPushButton::clicked, this, &Player::addSRT);
 
     PlayerControls *controls = new PlayerControls(this);
     controls->setState(m_player->state());
@@ -128,6 +129,7 @@ Player::Player(QWidget *parent)
     connect(controls, &PlayerControls::changeMuting, m_player, &QMediaPlayer::setMuted);
     connect(controls, &PlayerControls::changeRate, m_player, &QMediaPlayer::setPlaybackRate);
     connect(controls, &PlayerControls::stop, m_videoWidget, QOverload<>::of(&QVideoWidget::update));
+    connect(m_player, &QMediaPlayer::stateChanged, controls, &PlayerControls::setState);
     connect(m_player, &QMediaPlayer::volumeChanged, controls, &PlayerControls::setVolume);
     connect(m_player, &QMediaPlayer::mutedChanged, controls, &PlayerControls::setMuted);
 
@@ -254,7 +256,6 @@ void Player::wordHighlighted(bool yes)
         APIRequest();
     }
 }
-
 
 void Player::APIRequest()
 {
@@ -523,6 +524,15 @@ QString Player::format_time(int time)
     }
 }
 
+void Player::loadTranscript()
+{
+    m_transcript->clear();
+    for (auto line : subtitle_List.at(currentIndex))
+    {
+        m_transcript->append(line);
+    }
+}
+
 void Player::drawSubtitles(QString subtitle)
 {
     m_subtitles->setText(subtitle);
@@ -547,12 +557,15 @@ void Player::open()
     if (fileDialog.exec() == QDialog::Accepted)
     {
         addToPlaylist(fileDialog.selectedUrls());
+
+        //read subtitle file
         for (auto url : fileDialog.selectedUrls())
         {
             QString path = url.path();
             if (QFileInfo(path).exists())
             {
-                QString subtitle_FileName = QFileInfo(path).path() + "/" + QFileInfo(path).completeBaseName() + ".srt";
+                QString subtitle_FileName = QFileInfo(path).path() + "/" +
+                        QFileInfo(path).completeBaseName() + ".srt";
 
                 if (QFileInfo(subtitle_FileName).exists())
                 {
@@ -560,6 +573,8 @@ void Player::open()
                     if(!file.open(QIODevice::ReadOnly))
                     {
                         QMessageBox::information(0, "error", file.errorString());
+                        QStringList dummySub;
+                        subtitle_List.push_back(dummySub);
                     }
 
                     QTextStream in(&file);
@@ -574,18 +589,67 @@ void Player::open()
 
                     file.close();
                 }
+                //if sub file doesn't exist, add empty sub to list
+                else
+                {
+                    QStringList dummySub;
+                    subtitle_List.push_back(dummySub);
+                }
+            }
+        }
+    }
+}
+
+void Player::addSRT()
+{
+    if (m_playlist->isEmpty())
+    {
+        QMessageBox msgBox;
+        msgBox.setWindowFlags(Qt::Popup);
+        msgBox.setText("Open and load a video before adding subtitles!");
+        msgBox.exec();
+
+        return;
+    }
+
+    QFileDialog fileDialog(this);
+    fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
+    fileDialog.setWindowTitle(tr("Add SRT file"));
+    fileDialog.setFileMode(QFileDialog::ExistingFile);
+    fileDialog.setNameFilter(tr("Subtitles (*.srt)"));
+
+    fileDialog.setDirectory(QStandardPaths::standardLocations(QStandardPaths::MoviesLocation).value(0, QDir::homePath()));
+
+    if (fileDialog.exec() == QDialog::Accepted)
+    {
+        auto subtitle_Files = fileDialog.selectedFiles();
+
+        for (auto subtitle_FileName : subtitle_Files)
+        {
+            if (QFileInfo(subtitle_FileName).exists())
+            {
+                QFile file(subtitle_FileName);
+                if(!file.open(QIODevice::ReadOnly))
+                {
+                    QMessageBox::information(0, "error", file.errorString());
+                }
+
+                QTextStream in(&file);
+
+                QStringList fullSubtitles;
+                while(!in.atEnd())
+                {
+                    fullSubtitles.push_back(in.readLine());
+                }
+
+                subtitle_List[currentIndex] = fullSubtitles;
+
+                file.close();
             }
         }
     }
 
-    //load transcript
-    m_transcript->clear();
-    for (auto line : subtitle_List.back())
-    {
-        m_transcript->append(line);
-    }
-
-    m_transcript -> moveCursor(QTextCursor::Start) ;
+    loadTranscript();
 }
 
 static bool isPlaylist(const QUrl &url) // Check for ".m3u" playlists.
@@ -663,14 +727,10 @@ void Player::jump(const QModelIndex &index)
 void Player::playlistPositionChanged(int currentItem)
 {
     currentIndex = currentItem;
-    m_playlistView->setCurrentIndex(m_playlistModel->index(currentItem, 0));
+    m_playlistView->setCurrentIndex(m_playlistModel->index(currentIndex, 0));
 
     //load transcript
-    m_transcript->clear();
-    for (auto line : subtitle_List.at(m_playlistModel->index(currentItem, 0).row()))
-    {
-        m_transcript->append(line);
-    }
+    loadTranscript();
 
     m_transcript -> moveCursor(QTextCursor::Start) ;
 }

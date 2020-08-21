@@ -122,6 +122,7 @@ private:
     QString format_time(int time);
     void processSubtitles();
     void highlight_currentLine();
+    void loadTranscript();
 
     void setTrackInfo(const QString &info);
     void setStatusInfo(const QString &info);
@@ -148,6 +149,7 @@ private:
     int currentIndex;
     QTextEdit * m_subtitles = nullptr;
     QList<QStringList> subtitle_List;
+    void addSRT();
 
     //thread to draw subs
     std::thread subtitle_thread;
