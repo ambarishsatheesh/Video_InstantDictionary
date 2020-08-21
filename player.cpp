@@ -284,10 +284,29 @@ void Player::managerFinished(QNetworkReply *reply)
     QByteArray answer = reply->readAll();
     QString outputString = parse_JSON_Response(answer);
 
-    QMessageBox msgBox;
-    msgBox.setWindowFlags(Qt::Popup);
-    msgBox.setText(outputString);
-    msgBox.exec();
+//    QMessageBox msgBox;
+//    msgBox.setWindowFlags(Qt::Popup);
+
+    QDialog * dialog = new QDialog(this);
+    dialog->setWindowFlags(Qt::Popup);
+
+    QTextEdit* dictionaryOutput = new QTextEdit();
+
+    QScrollArea *scroll = new QScrollArea(dialog);
+    scroll->setWidgetResizable(true);
+    scroll->setWidget(dictionaryOutput);
+
+
+    // Add a layout for QDialog
+    QHBoxLayout *dialog_layout = new QHBoxLayout(dialog);
+    dialog->setLayout(dialog_layout);
+    dialog->layout()->addWidget(scroll); // add scroll to the QDialog's layout
+    dictionaryOutput->setText(outputString);
+    dialog->setMinimumSize(QSize(m_transcript->height()/2, m_transcript->height()));
+    dialog->exec();
+
+//    msgBox.setText(outputString);
+//    msgBox.exec();
 
     if (m_player->state() == QMediaPlayer::PausedState)
     {
@@ -342,9 +361,9 @@ QString Player::parse_JSON_Response(QByteArray answer)
 
         QJsonArray senses_array = entry_obj["senses"].toArray();
 
-        for (auto sense : senses_array)
+        for (int i = 0; i < 2; ++i)
         {
-            QJsonObject sense_obj = sense.toObject();
+            QJsonObject sense_obj = senses_array.at(i).toObject();
             QJsonArray definition_array = sense_obj["definitions"].toArray();
             //definition
             outputList.push_back("<b>");
