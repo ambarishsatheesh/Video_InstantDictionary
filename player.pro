@@ -19,3 +19,5 @@ SOURCES = main.cpp \
     playercontrols.cpp \
     playlistmodel.cpp \
     videowidget.cpp
+
+TARGET = VideoToInstantDictionary
