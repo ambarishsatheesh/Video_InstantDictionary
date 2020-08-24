@@ -63,6 +63,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include <cmath>
 #include <QNetworkReply>
+#include <QCloseEvent>
 
 #define DEFAULTFONTSIZE 14
 
@@ -225,10 +226,45 @@ Player::Player(QWidget *parent)
 
 Player::~Player()
 {
-    subtitle_thread.join();
-    highlightline_thread.join();
+    if (subtitle_thread.joinable())
+    {
+        subtitle_thread.join();
+    }
+
+    if (highlightline_thread.joinable())
+    {
+        highlightline_thread.join();
+    }
 
     delete manager;
+}
+
+void Player::closeEvent (QCloseEvent *event)
+{
+    QMessageBox::StandardButton resBtn = QMessageBox::question( this, "Test Player",
+                                                                tr("Are you sure you want to close this application?\n"),
+                                                                QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
+                                                                QMessageBox::Yes);
+    if (resBtn != QMessageBox::Yes)
+    {
+        event->ignore();
+    }
+    else
+    {
+        threadRun = false;
+
+        if (subtitle_thread.joinable())
+        {
+            subtitle_thread.join();
+        }
+
+        if (highlightline_thread.joinable())
+        {
+            highlightline_thread.join();
+        }
+
+        event->accept();
+    }
 }
 
 void Player::wordHighlighted(bool yes)
@@ -430,7 +466,7 @@ void Player::highlight_currentLine()
 {
     highlightline_thread = std::thread([&]()
     {
-        while (1)
+        while (threadRun)
         {
             setTranscriptPosition();
             std::this_thread::sleep_for(std::chrono::milliseconds(300));
@@ -470,7 +506,7 @@ void Player::processSubtitles()
 {
     subtitle_thread = std::thread([&]()
     {
-        while (1)
+        while (threadRun)
         {
             if (currentIndex < 0 || m_player->state() != QMediaPlayer::PlayingState)
             {
