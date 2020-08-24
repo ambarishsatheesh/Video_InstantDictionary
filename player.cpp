@@ -64,6 +64,8 @@
 #include <cmath>
 #include <QNetworkReply>
 
+#define DEFAULTFONTSIZE 14
+
 Player::Player(QWidget *parent)
     : QWidget(parent)
 {
@@ -109,9 +111,11 @@ Player::Player(QWidget *parent)
     m_labelDuration = new QLabel(this);
     connect(m_slider, &QSlider::sliderMoved, this, &Player::seek);
 
+    //open video button
     QPushButton *openVideoButton = new QPushButton(tr("Open Video"), this);
     connect(openVideoButton, &QPushButton::clicked, this, &Player::open);
 
+    //add subtitle button
     QPushButton *addSRTButton = new QPushButton(tr("Add SRT file"), this);
     connect(addSRTButton, &QPushButton::clicked, this, &Player::addSRT);
 
@@ -133,17 +137,16 @@ Player::Player(QWidget *parent)
     connect(m_player, &QMediaPlayer::volumeChanged, controls, &PlayerControls::setVolume);
     connect(m_player, &QMediaPlayer::mutedChanged, controls, &PlayerControls::setMuted);
 
-    auto font = QFont();
-    font.setPointSize(14);
+    //default font size
 
     m_transcript = new QTextEdit(this);
     m_transcript->setReadOnly(true);
-    m_transcript->setFont(font);
+    m_transcript->setFontPointSize(DEFAULTFONTSIZE);
     connect(m_transcript, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
     m_subtitles = new QTextEdit(parent);
     m_subtitles->setReadOnly(true);
-    m_subtitles->setFont(font);
+    m_subtitles->setFontPointSize(DEFAULTFONTSIZE);
     connect(this, &Player::drawSubtitles_signal, this, &Player::drawSubtitles);
     connect(m_subtitles, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
@@ -191,7 +194,7 @@ Player::Player(QWidget *parent)
         controls->setEnabled(false);
         m_playlistView->setEnabled(false);
         openVideoButton->setEnabled(false);
-        //addSRTButton->setEnabled(false);
+        addSRTButton->setEnabled(false);
     }
 
     metaDataChanged();
