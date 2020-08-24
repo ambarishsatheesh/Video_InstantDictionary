@@ -16,6 +16,6 @@ You can find the version I used (15.7.0 Basic) in the requisites folder in the s
   
   After this, compile via qmake and do either one of the following:
   * Add C:\Qt\Tools\OpenSSL\Win_x64\bin (or \Win_x86 for 32-bit) to your PATH environment variable
-  * Place libssl-1_1-x64.dll and libcrypto-1_1-x64.dll (or *x86.dlls) where the compiled .exe is located.
+  * Place libssl-1_1-x64.dll and libcrypto-1_1-x64.dll (or \*x86.dlls) where the compiled executable is located.
   
 These are the only issues I had when testing. Let me know if you come across any more issues and I will update this section.
