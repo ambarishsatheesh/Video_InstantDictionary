@@ -133,12 +133,17 @@ Player::Player(QWidget *parent)
     connect(m_player, &QMediaPlayer::volumeChanged, controls, &PlayerControls::setVolume);
     connect(m_player, &QMediaPlayer::mutedChanged, controls, &PlayerControls::setMuted);
 
+    auto font = QFont();
+    font.setPointSize(14);
+
     m_transcript = new QTextEdit(this);
     m_transcript->setReadOnly(true);
+    m_transcript->setFont(font);
     connect(m_transcript, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
     m_subtitles = new QTextEdit(parent);
     m_subtitles->setReadOnly(true);
+    m_subtitles->setFont(font);
     connect(this, &Player::drawSubtitles_signal, this, &Player::drawSubtitles);
     connect(m_subtitles, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
@@ -150,15 +155,15 @@ Player::Player(QWidget *parent)
     splitter1->addWidget(m_subtitles);
     splitter1->setStretchFactor(0, 1);
     splitter1->setStretchFactor(1, 0);
-    int videoWidget_index = splitter1->indexOf(m_videoWidget);
     m_videoWidget->setMinimumHeight(500);
+    int videoWidget_index = splitter1->indexOf(m_videoWidget);
     splitter1->setCollapsible(videoWidget_index, false);
     splitter1->setChildrenCollapsible(false);
 
     QHBoxLayout* transcriptHlayout = new QHBoxLayout();
-    transcriptHlayout->addWidget(m_playlistView, 0.5);
-    transcriptHlayout->addLayout(transcriptVlayout, 3);
-    transcriptHlayout->addWidget(m_transcript, 1);
+    transcriptHlayout->addWidget(m_playlistView, 2);
+    transcriptHlayout->addLayout(transcriptVlayout, 10);
+    transcriptHlayout->addWidget(m_transcript, 3);
 
     QBoxLayout *controlLayout = new QHBoxLayout;
     controlLayout->setMargin(0);
@@ -476,7 +481,7 @@ void Player::processSubtitles()
                 {
                     if (isWithinSubPeriod(m_player->position(), cur_subtitles.at(i)))
                     {
-                        QString fullSub = cur_subtitles.at(i+1) + "\n" + cur_subtitles.at(i+2);
+                        QString fullSub = cur_subtitles.at(i+1) + " " + cur_subtitles.at(i+2);
                         emit drawSubtitles_signal(fullSub);
                     }
                 }
