@@ -135,7 +135,6 @@ Player::Player(QWidget *parent)
 
     m_transcript = new QTextEdit(this);
     m_transcript->setReadOnly(true);
-    //m_transcript->ensureCursorVisible();
     connect(m_transcript, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
     m_subtitles = new QTextEdit(parent);
@@ -426,7 +425,7 @@ void Player::highlight_currentLine()
         while (1)
         {
             setTranscriptPosition();
-            //std::this_thread::sleep_for(std::chrono::milliseconds(300));
+            std::this_thread::sleep_for(std::chrono::milliseconds(300));
         }
     });
 }
@@ -455,9 +454,8 @@ void Player::setTranscriptPosition()
 
 void Player::moveScrollBar()
 {
-    int cursorY = m_transcript->cursorRect().top();
     QScrollBar *vbar = m_transcript->verticalScrollBar();
-    vbar->setValue(vbar->value() + cursorY );
+    vbar->setValue(vbar->value() + m_transcript->cursorRect().top());
 }
 
 void Player::processSubtitles()
@@ -527,9 +525,12 @@ QString Player::format_time(int time)
 void Player::loadTranscript()
 {
     m_transcript->clear();
-    for (auto line : subtitle_List.at(currentIndex))
+    if (currentIndex >= 0)
     {
-        m_transcript->append(line);
+        for (auto line : subtitle_List.at(currentIndex))
+        {
+            m_transcript->append(line);
+        }
     }
 }
 
@@ -548,20 +549,20 @@ void Player::open()
     QFileDialog fileDialog(this);
     fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
     fileDialog.setWindowTitle(tr("Open Files"));
-    QStringList supportedMimeTypes = m_player->supportedMimeTypes();
-    if (!supportedMimeTypes.isEmpty()) {
-        supportedMimeTypes.append("audio/x-m3u"); // MP3 playlists
-        fileDialog.setMimeTypeFilters(supportedMimeTypes);
-    }
+    fileDialog.setNameFilter(tr("Videos (*.mkv *.mp4 *.avi)"));
+
     fileDialog.setDirectory(QStandardPaths::standardLocations(QStandardPaths::MoviesLocation).value(0, QDir::homePath()));
     if (fileDialog.exec() == QDialog::Accepted)
     {
         addToPlaylist(fileDialog.selectedUrls());
 
         //read subtitle file
-        for (auto url : fileDialog.selectedUrls())
+        for (auto& url : fileDialog.selectedUrls())
         {
-            QString path = url.path();
+            QString path = url.toLocalFile();
+//            url.setPath(path);
+//            addToPlaylist(url);
+
             if (QFileInfo(path).exists())
             {
                 QString subtitle_FileName = QFileInfo(path).path() + "/" +
@@ -592,12 +593,21 @@ void Player::open()
                 //if sub file doesn't exist, add empty sub to list
                 else
                 {
+                    //inform user that no subtitle file exists
+                    QMessageBox msgBox;
+                    msgBox.setWindowFlags(Qt::Popup);
+                    msgBox.setText("No .srt subtitle file found! "
+                                   "Please manually add an appropriate .srt file to access live subtitles and transcript.");
+                    msgBox.exec();
+
                     QStringList dummySub;
                     subtitle_List.push_back(dummySub);
                 }
             }
         }
     }
+
+    loadTranscript();
 }
 
 void Player::addSRT()
@@ -610,6 +620,14 @@ void Player::addSRT()
         msgBox.exec();
 
         return;
+    }
+
+    //if playlist hasnt been initialised completely
+    //(i.e. play button has not been pressed yet)
+    if (currentIndex < 0)
+    {
+        m_player->play();
+        m_player->pause();
     }
 
     QFileDialog fileDialog(this);
@@ -660,13 +678,18 @@ static bool isPlaylist(const QUrl &url) // Check for ".m3u" playlists.
     return fileInfo.exists() && !fileInfo.suffix().compare(QLatin1String("m3u"), Qt::CaseInsensitive);
 }
 
-void Player::addToPlaylist(const QList<QUrl> &urls)
+void Player::addToPlaylist(const QList<QUrl>& urls)
 {
-    for (auto &url: urls) {
+    for (auto url : urls)
+    {
         if (isPlaylist(url))
+        {
             m_playlist->load(url);
+        }
         else
+        {
             m_playlist->addMedia(url);
+        }
     }
 }
 
