@@ -7,6 +7,8 @@ QT += network \
       multimediawidgets \
       widgets
 
+CONFIG += debug
+
 HEADERS = \
     player.h \
     playercontrols.h \
@@ -17,6 +19,3 @@ SOURCES = main.cpp \
     playercontrols.cpp \
     playlistmodel.cpp \
     videowidget.cpp
-
-target.path = $$[QT_INSTALL_EXAMPLES]/multimediawidgets/player
-INSTALLS += target
