@@ -129,6 +129,8 @@ private:
     void handleCursor(QMediaPlayer::MediaStatus status);
     void updateDurationInfo(qint64 currentInfo);
 
+    void closeEvent (QCloseEvent *event);
+
     QMediaPlayer *m_player = nullptr;
     QMediaPlaylist *m_playlist = nullptr;
     QVideoWidget *m_videoWidget = nullptr;
@@ -154,6 +156,7 @@ private:
     //thread to draw subs
     std::thread subtitle_thread;
     std::thread highlightline_thread;
+    bool threadRun = true;
 
     //cursor
     void moveScrollBar();
