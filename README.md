@@ -1,5 +1,7 @@
 # Video_InstantDictionary
 
+_**Debug mode (CONFIG += debug) is required even when compiling a release version, otherwise subtitles aren't drawn. This is a bug and I have not looked into the cause yet.**_
+
 ## Executable/Feature Requisites and Issues
 
 ### Linux
