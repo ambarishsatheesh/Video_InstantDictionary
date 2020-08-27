@@ -59,6 +59,7 @@
 #include <QNetworkAccessManager>
 #include <QHBoxLayout>
 #include <QScrollArea>
+#include <QMenu>
 
 QT_BEGIN_NAMESPACE
 class QAbstractItemView;
@@ -179,6 +180,14 @@ private:
     QTextEdit* dictionaryOutput;
     QHBoxLayout* dialog_layout;
     QScrollArea* scroll;
+
+    //right click menu
+    bool isDefMenu_constructed = false;
+    QMenu* contextMenu = nullptr;
+    QAction* a_getDefinition = nullptr;
+    QString current_word;
+    void getWord();
+    void showContextMenu(const QPoint &pos);
 };
 
 #endif // PLAYER_H
