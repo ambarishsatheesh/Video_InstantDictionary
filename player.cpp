@@ -65,7 +65,8 @@
 #include <QNetworkReply>
 #include <QCloseEvent>
 
-#define DEFAULTFONTSIZE 14
+#define DEFAULT_SUB_FONTSIZE 22
+#define DEFAULT_TS_FONTSIZE 14
 
 Player::Player(QWidget *parent)
     : QWidget(parent)
@@ -142,12 +143,12 @@ Player::Player(QWidget *parent)
 
     m_transcript = new QTextEdit(this);
     m_transcript->setReadOnly(true);
-    m_transcript->setFontPointSize(DEFAULTFONTSIZE);
+    m_transcript->setFontPointSize(DEFAULT_TS_FONTSIZE);
     connect(m_transcript, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
     m_subtitles = new QTextEdit(parent);
     m_subtitles->setReadOnly(true);
-    m_subtitles->setFontPointSize(DEFAULTFONTSIZE);
+    m_subtitles->setFontPointSize(DEFAULT_SUB_FONTSIZE);
     connect(this, &Player::drawSubtitles_signal, this, &Player::drawSubtitles);
     connect(m_subtitles, &QTextEdit::copyAvailable, this, &Player::wordHighlighted);
 
@@ -222,6 +223,12 @@ Player::Player(QWidget *parent)
     dialog_layout = new QHBoxLayout(definition_dialog);
     definition_dialog->setLayout(dialog_layout);
     definition_dialog->layout()->addWidget(scroll);
+
+    //TEST
+    m_transcript->setText("TEST WORD LIST HERE");
+    m_transcript->append("ANOTHER LINE HERE");
+    m_transcript->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_transcript, &QTextEdit::customContextMenuRequested, this, &Player::showContextMenu);
 }
 
 Player::~Player()
@@ -472,6 +479,36 @@ void Player::highlight_currentLine()
             std::this_thread::sleep_for(std::chrono::milliseconds(300));
         }
     });
+}
+
+void Player::showContextMenu(const QPoint &pos)
+{
+    if (!isDefMenu_constructed)
+    {
+        contextMenu = new QMenu(this);
+
+        a_getDefinition = new QAction("Get Definition", this);
+        connect(a_getDefinition, &QAction::triggered, this, &Player::getWord);
+
+        contextMenu->addAction(a_getDefinition);
+        isDefMenu_constructed = true;
+    }
+
+    QTextCursor tc = m_transcript->cursorForPosition(pos);
+    tc.select(QTextCursor::WordUnderCursor);
+    current_word = tc.selectedText();
+
+    if(!current_word.isEmpty())
+    {
+        a_getDefinition->setText("Get Definition of '" + current_word + "'");
+        contextMenu->popup(m_transcript->mapToGlobal(pos));
+    }
+}
+
+void Player::getWord()
+{
+    emit drawSubtitles_signal(current_word);
+    current_word.clear();
 }
 
 void Player::setTranscriptPosition()
