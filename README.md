@@ -1,6 +1,6 @@
 # Video_InstantDictionary
 
-A program that allows video playback with subtitles and features live English dictionary lookup of words in the subtitles (from a subtitle file, e.g. .srt file). I made this for my dad so he could learn the meaning of difficult English words in the movies and TV shows he watched. 
+A program that allows video playback with subtitles and features live English dictionary (Oxford Dictionaries API) lookup of words in the subtitles (from a subtitle file, e.g. .srt file). I made this for my dad so he could learn the meaning of difficult English words in the movies and TV shows he watched. 
 
 ![screenshot1](https://github.com/ambarishsatheesh/Video_InstantDictionary/blob/master/images/screenshot1.png)
 
